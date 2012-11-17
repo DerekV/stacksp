@@ -6,5 +6,5 @@
      ((null expression) stack)
      ((numberp item)
       (process-stack rest (append stack (list item))))
-     ((functionp item)
-      (process-stack rest (list (apply item stack)))))))
+     ((fboundp item)
+      (process-stack rest (list (apply (symbol-function item) stack)))))))
