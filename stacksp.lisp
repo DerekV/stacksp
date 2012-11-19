@@ -1,13 +1,12 @@
 
 (defun process-stack (expression &optional stack)
-  (let ((item (car expression))
-	(rest (cdr expression)))
-    (cond
-     ((null expression) stack)
-     ((and (symbolp item) (fboundp item))
-      (process-stack rest (list (apply (symbol-function item) stack))))
-     (T
-      (process-stack rest (append stack (list item)))))))
+  (if (null expression)
+      stack
+    (let* ((item (pop expression))
+	   (rest expression))
+      (if (and (symbolp item) (fboundp item))
+	  (process-stack rest (list (apply (symbol-function item) stack)))
+	(process-stack rest (push item stack))))))
 
 (defun string-to-stack (str)
   (with-input-from-string (in str)
@@ -15,8 +14,9 @@
 				x = (read in nil nil)
 				while x
 				collect x)))
+
 (defun stack-to-string (stack)
-  (format nil "~a" stack))
+  (format nil "~a" (reverse stack)))
 
 (defun read-stack-from-line ()
   (string-to-stack (read-line)))
