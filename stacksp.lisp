@@ -1,8 +1,8 @@
 
+
 (defparameter root-context
   (let* 
-      (
-       (ftbl (make-hash-table))
+      ((ftbl (make-hash-table))
        (lookup 
 	(lambda (s)
 	  (or (gethash s ftbl)
@@ -46,7 +46,18 @@
 				collect x)))
 
 (defun stack-to-string (stack)
-  (format nil "~a" (reverse stack)))
+  (loop for x in (reverse stack) collect
+	(cond 
+	 ((null x) "NIL ")
+	 ((listp x)
+	    (concatenate 'string 
+			 "[ "
+			 (stack-to-string x)
+			 "] "))
+	  (T (format nil "~a " x)))
+	into z
+	finally (return (apply #'concatenate (cons 'string z)))))
+
 
 (defun read-stack-from-line ()
   (string-to-stack (read-line)))
@@ -61,5 +72,18 @@
         do (print-stack-immediate result)))
 
 
-(add-function root-context '+ (lambda (stack) (list (apply #'+ stack))))
-(add-function root-context '- (lambda (stack) (list (apply #'- stack))))
+(add-function root-context '+ (lambda (stack) (cons (funcall #'+ (pop stack) (pop stack)) stack)))
+(add-function root-context '- (lambda (stack) (cons (funcall #'- (pop stack) (pop stack)) stack)))
+(add-function root-context '+! (lambda (stack) (list (apply #'+ stack))))
+(add-function root-context '-! (lambda (stack) (list (apply #'- stack))))
+
+(add-function root-context 'dup (lambda (stack)
+				    (let ((times (pop stack))
+					  (item (pop stack)))
+				      (dotimes (i times stack) (push item stack)))))
+(add-function root-context 'trash (lambda (stack)
+					 (let ((howmany (pop stack)))
+					   (nthcdr howmany stack))))
+(add-function root-context 'stack (lambda (stack)
+				    (let ((howmany (pop stack)))
+				      (cons (subseq stack 0 howmany) (nthcdr howmany stack)))))
