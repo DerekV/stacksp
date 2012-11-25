@@ -32,7 +32,7 @@
 
 (defun add-function (context symb function)
   (funcall (elt context 2) symb function)
-  'context)  ;; todo - destuctive 
+  context)  ;; todo - destuctive
 
 
 (defun get-stack (context)
@@ -102,7 +102,7 @@
 (add-function root-context 'dup (lambda (context)
 				  (let* ((stack (get-stack context))
 					 (times (pop stack))
-					 (item (pop stack)))			      
+					 (item (pop stack)))
 				    (context-with context
 						  (dotimes (i times stack) (push item stack))))))
 
@@ -124,11 +124,23 @@
 		       (symb (pop stack))
 		       (var-list (pop stack))
 		       (deck (pop stack)))
-		  (format t "defining-context ~a ~% symb ~a ~% var-list ~a ~% deck ~a ~% stack ~a " 
+		  (format t "defining-context ~a ~% symb ~a ~% var-list ~a ~% deck ~a ~% stack ~a "
 			  defining-context symb var-list deck stack)
 		  (finish-output)
 		  (setf (elt defining-context 0) stack)
 		  (add-function defining-context symb
 				(lambda (calling-context)
-				  (process-deck deck calling-context)))
-		  defining-context)))
+				  (let ((local-context (make-context defining-context nil))
+					(stack-of-caller (get-stack calling-context)))
+				    ;; bind params
+				    (loop for param in var-list do
+					  (let ((bound-value (pop stack-of-caller)))
+					    (format t "~%hello ~a ~a ~%" param bound-value)
+					    (finish-output)
+					    (add-function local-context param
+							  (lambda (supra-context)
+							    (context-with supra-context
+									  (cons bound-value (get-stack supra-context)))))))
+				  (let ((processed (process-deck deck local-context)))
+				    (context-with calling-context (append (get-stack processed) stack-of-caller))))))
+		  (context-with defining-context stack))))
