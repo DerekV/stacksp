@@ -2,7 +2,7 @@
 (load "./stacksp.lisp")
 
 
-(defparameter *tests*
+(defparameter *lisp-list-tests*
   '(
     ( "A short quine with numbers" (1 2) (1 2) )
     ( "Null identity" () () )
@@ -24,26 +24,58 @@
       (50 144))
     ))
 
-(defun test-stacksp (tests) 
+(defparameter *string-tests* 
+'(
+  ( "Empty is empty" "" "" )
+  ( "A B C is A B C" "A B C" "A B C" )
+  ;;( "A nested stack" "A B C [ 1 2 3 ] FIN" "A B C [ 1 2 3 ] FIN" )
+  ( "Some addition and subtraction" "START 1 2 3 + 10 - + END" "START 6 END" )
+))
+
+(defun test-lisp-lists (tests) 
+  (run-tests-using tests 
+		   (lambda (input)
+		     (reverse (get-stack (process-deck input))))
+		   (lambda (expected-output actual-output) 
+		     (equal expected-output actual-output))))
+
+(defun test-input-strings (tests)
+  (run-tests-using tests 
+		   (lambda (input)
+		     (stack-to-string (get-stack (process-deck (string-to-stack input)))))
+		   (lambda (expected-output actual-output)
+		     (equal expected-output (string-trim " " actual-output)))))
+
+(defun run-tests-using (tests output-generator output-verifier)
   (mapcar (lambda (test-case)
-	    (destructuring-bind (description input-deck expected-output) test-case
-	      (let ((actual-output (reverse (get-stack (process-deck input-deck)))))
+	    (destructuring-bind (description input expected-output) test-case
+	      (let ((actual-output (funcall output-generator input)))
 		(list
 		 description
-		 (equal expected-output actual-output)
-		 input-deck
+		 (funcall output-verifier expected-output actual-output)
+		 input
 		 expected-output
 		 actual-output))))
 	  tests))
 
 (defun print-stacksp-test-report (report)
   (mapcar (lambda (test-result)
-	    (destructuring-bind (description success input-deck expected-output actual-output) test-result
+	    (destructuring-bind (description success input expected-output actual-output) test-result
 	      (format t "============~%~:[FAIL~;pass~]: ~a~%For       ~a~%Expected  ~a~%Got       ~a~%~%" 
-		      success description input-deck (reverse expected-output) (reverse actual-output))
+		      success description input expected-output actual-output)
 	      success))
 	  report))
 
-(defun test-and-print-report (tests)
-  (print-stacksp-test-report (test-stacksp tests)))
+(defun all-true (list) 
+  (every #'identity list))
 
+(defun deep-all-true (tree)
+  (if (consp tree)
+      (every #'deep-all-true tree)
+    tree))
+
+(defun run-tests () 
+  (deep-all-true
+   (list 
+    (print-stacksp-test-report (test-lisp-lists *lisp-list-tests*))
+    (print-stacksp-test-report (test-input-strings *string-tests*)))))
