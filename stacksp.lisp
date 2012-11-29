@@ -124,8 +124,6 @@
 		       (symb (pop stack))
 		       (var-list (pop stack))
 		       (deck (pop stack)))
-		  (format t "defining-context ~a ~% symb ~a ~% var-list ~a ~% deck ~a ~% stack ~a "
-			  defining-context symb var-list deck stack)
 		  (finish-output)
 		  (setf (elt defining-context 0) stack)
 		  (add-function defining-context symb
@@ -135,7 +133,6 @@
 				    ;; bind params
 				    (loop for param in var-list do
 					  (let ((bound-value (pop stack-of-caller)))
-					    (format t "~%hello ~a ~a ~%" param bound-value)
 					    (finish-output)
 					    (add-function local-context param
 							  (lambda (supra-context)
